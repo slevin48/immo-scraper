@@ -1,0 +1,6 @@
+selenium
+numpy
+pandas
+matplotlib
+ipykernel
+requests
