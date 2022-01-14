@@ -3,6 +3,12 @@ from bs4 import BeautifulSoup
 import requests as rq
 import pandas as pd
 
+
+@st.cache
+def convert_df(df):
+     # IMPORTANT: Cache the conversion to prevent computation on every rerun
+     return df.to_csv().encode('utf-8')
+
 # #Century21
 # urlbase = 'https://www.century21-adc-meudon.com/'
 # page = rq.get(urlbase+'annonces/achat/')
@@ -37,3 +43,12 @@ df = pd.DataFrame(zip(title,price,link),columns=["title","price","link"])
 
 st.markdown('## Orpi')
 df
+
+csv = convert_df(df)
+
+st.download_button(
+     label="Download data as CSV",
+     data=csv,
+     file_name='orpi_viro.csv',
+     mime='text/csv',
+ )
