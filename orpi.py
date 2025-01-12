@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 import pandas as pd
-
+import re
 def get_full_url(base, endpoint):
     """Construct the full URL from base and endpoint."""
     return f"{base}{endpoint}"
@@ -55,7 +55,7 @@ def extract_prices(soup, class_name="c-estate-thumb__price-tag"):
     for element in elements:
         text = element.get_text(strip=True)
         # Remove non-breaking spaces and euro symbols, then convert to integer
-        clean_text = text.replace(u'\xa0', u'').replace(u'€', u'')
+        clean_text = text.replace(u'\xa0', u'').replace(u'€', u'').replace(',', '').replace('.', '')
         try:
             price = int(clean_text)
             prices.append(price)
@@ -63,18 +63,40 @@ def extract_prices(soup, class_name="c-estate-thumb__price-tag"):
             prices.append(None)  # Handle cases where conversion fails
     return prices
 
-def create_dataframe(titles, prices, links, images=None):
+def parse_title(title):
+    """
+    Parse the title string to extract Type, Rooms, and Area.
+
+    Example:
+        Input: 'Appartement3 pièces 61 m2'
+        Output: ('Appartement', '3 pièces', '61 m2')
+    """
+    # Define regex pattern
+    pattern = r'^(?P<Type>\w+)\s*(?P<Rooms>\d+\s*pièces?)\s*(?P<Area>\d+(?:[.,]\d+)?\s*m(?:2|²))$'
+    match = re.match(pattern, title)
+    if match:
+        return match.group('Type'), match.group('Rooms'), match.group('Area')
+    else:
+        # Log the unmatched title
+        logging.warning(f"Title parsing failed for: {title}")
+        return None, None, None
+
+def create_dataframe(titles, prices, links, images=None, types=None, rooms=None, areas=None):
     """Create a pandas DataFrame from the extracted data."""
     data = {
-        "title": titles,
-        "price": prices,
-        "link": links
+        # "Title": titles,
     }
-    if images:
-        data["image"] = images
+    if types and rooms and areas:
+        data["Type"] = types
+        data["Rooms"] = rooms
+        data["Area (m²)"] = areas
+    # if images:
+    #     data["Image"] = images
+    data["Price (€)"] = prices
+    data["Link"] = [f"https://www.orpi.com{link}" for link in links]
     return pd.DataFrame(data)
 
-def get_props(agency = 'agenceorangerie'):
+def get_props(agency='agenceorangerie'):
     # Configuration
     base_url = 'https://www.orpi.com/'
     endpoint = f'{agency}/acheter'
@@ -84,7 +106,8 @@ def get_props(agency = 'agenceorangerie'):
     # Fetch and parse the page
     page_content = fetch_page(full_url, headers)
     if not page_content:
-        return  # Exit if page couldn't be fetched
+        print("Failed to retrieve page content.")
+        return None  # Exit if page couldn't be fetched
 
     soup = parse_html(page_content)
 
@@ -93,10 +116,30 @@ def get_props(agency = 'agenceorangerie'):
     links = extract_links(soup)
     images = extract_images(soup)
     prices = extract_prices(soup)
+    
+    # Parse titles to extract Type, Rooms, and Area
+    types, rooms, areas = [], [], []
+    for title in titles:
+        type_, room, area = parse_title(title)
+        types.append(type_)
+        rooms.append(room)
+        areas.append(area)
 
-    # Create DataFrame
-    df = create_dataframe(titles, prices, links, images)
+    # Create DataFrame with correct argument order using keyword arguments
+    df = create_dataframe(
+        titles=titles,
+        prices=prices,
+        links=links,
+        images=images,
+        types=types,
+        rooms=rooms,
+        areas=areas
+    )
     return df
 
 if __name__ == "__main__":
-    print(get_props())
+    df = get_props()
+    if df is not None and not df.empty:
+        print(df)
+    else:
+        print("No data to display.")
