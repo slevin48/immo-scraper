@@ -2,6 +2,8 @@ from bs4 import BeautifulSoup
 import requests
 import pandas as pd
 import re
+import logging
+
 def get_full_url(base, endpoint):
     """Construct the full URL from base and endpoint."""
     return f"{base}{endpoint}"
@@ -72,10 +74,11 @@ def parse_title(title):
         Output: ('Appartement', '3 pièces', '61 m2')
     """
     # Define regex pattern
-    pattern = r'^(?P<Type>\w+)\s*(?P<Rooms>\d+\s*pièces?)\s*(?P<Area>\d+(?:[.,]\d+)?\s*m(?:2|²))$'
+    pattern = r'^(?P<Type>\w+)\s*(?P<Rooms>\d+\s*pièces?)\s*(?P<Area>\d+(?:[.,]\d+)?\s*m(?:2|²)?)$'
     match = re.match(pattern, title)
     if match:
-        return match.group('Type'), match.group('Rooms'), match.group('Area')
+        area = match.group('Area').replace('m2', '').replace(',', '.').strip()
+        return match.group('Type'), match.group('Rooms'), area
     else:
         # Log the unmatched title
         logging.warning(f"Title parsing failed for: {title}")
