@@ -12,8 +12,9 @@
 	  "vscode": {
 		"settings": {},
 		"extensions": [
-		  "ms-python.python",
-		  "ms-python.vscode-pylance"
+			"ms-python.python",
+			"ms-python.vscode-pylance",
+			"ms-toolsai.jupyter"
 		]
 	  }
 	},
