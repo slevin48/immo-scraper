@@ -98,11 +98,12 @@ def parse_title(title: str) -> Dict[str, Optional[str]]:
         Dict[str, Optional[str]]: Extracted details or None if parsing fails.
     """
     pattern = re.compile(
-        r'(?P<location>[A-Za-z\s]+)\s*\n\s*'                    # Location
-        r'(?:\n\s*(?P<zipcode>\d{5}))?\s*'                     # Optional Zipcode (5 digits)
-        r'(?P<area>\d+[.,]?\d*)\s*m2,\s*'                       # Area in m²
-        r'(?P<rooms>\d+)\s*pièces\s*,?\s*Ref\s*:\s*(?P<ref>\d+)',  # Rooms and Reference
-        re.DOTALL
+        r'(?P<location>[A-Za-z\s]+)\s+'                  # Location
+        r'(?P<zipcode>\d{2,5})\s+'                      # Zipcode (2 to 5 digits)
+        r'(?P<area>\d+[.,]?\d*)\s*m2'                    # Area in m²
+        r'(?:,\s*(?P<rooms>\d+)\s*pièces)?\s*'           # Optional: Rooms
+        r'Ref\s*:\s*(?P<ref>\d+)',                      # Reference number
+        re.IGNORECASE
     )
     match = pattern.search(title)
     if match:
@@ -120,10 +121,15 @@ def parse_title(title: str) -> Dict[str, Optional[str]]:
         except ValueError:
             area = None
 
-        try:
-            rooms = int(match.group('rooms'))
-        except ValueError:
-            rooms = None
+        # Handle optional rooms
+        rooms_str = match.group('rooms')
+        if rooms_str:
+            try:
+                rooms = int(rooms_str)
+            except ValueError:
+                rooms = None
+        else:
+            rooms = None  # Assign None if rooms info is missing
 
         reference = match.group('ref')
 
