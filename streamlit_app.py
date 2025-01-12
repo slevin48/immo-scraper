@@ -2,7 +2,7 @@ import streamlit as st
 from bs4 import BeautifulSoup
 import requests as rq
 import pandas as pd
-import forest, century21
+import forest, century21, orpi
 
 @st.cache_data
 def convert_df(df):
@@ -28,24 +28,14 @@ elif ag == 'Century21':
      st.markdown('## Century 21')
      df = century21.scrape_properties(city='meudon', action='achat')
      st.write(df)
-     
+
 elif ag == 'Orpi':
      #Orpi Viro
-     urlorpi = 'https://www.orpi.com/'
-     page = rq.get(urlorpi+'viroflay/acheter')
-     soup = BeautifulSoup(page.content, "html.parser")
-     h = soup.find_all(class_="u-link-unstyled c-overlay__link")
-     title = [k.get_text(strip=True) for k in h]
-     l = soup.find_all(class_="u-link-unstyled c-overlay__link")
-     link = [k['href'] for k in l]
-     i = soup.find_all(class_="c-overlay__zoom")
-     img = [k['data-src'] for k in i]
-     p = soup.find_all(class_="u-text-md u-color-primary")
-     price = [int(k.get_text(strip=True).replace(u'\xa0', u'').replace(u'€', u'')) for k in p]
-
-     df = pd.DataFrame(zip(title,price,link),columns=["title","price","link"])
-
+     # urlorpi = 'https://www.orpi.com/'
+     # endpoint = 'agenceorangerie/acheter'
      st.markdown('## Orpi')
+     df = orpi.get_props()
+     st.write(df)
 
 csv = convert_df(df)
 
