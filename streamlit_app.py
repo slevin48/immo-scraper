@@ -34,7 +34,8 @@ elif ag == 'Orpi':
      # urlorpi = 'https://www.orpi.com/'
      # endpoint = 'agenceorangerie/acheter'
      st.markdown('## Orpi')
-     df = orpi.get_props()
+     agency = st.selectbox('Choose the Agency', ['agencecentraleversaillaise', 'agencedelagareantony', 'agenceorangerie', 'antonyimmo', 'binhome', 'orpifresnes', 'viroflay'])
+     df = orpi.get_props(agency)
      st.write(df)
 
 csv = convert_df(df)
